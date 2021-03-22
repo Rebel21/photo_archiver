@@ -7,11 +7,8 @@ import requests
 class VkApiClient:
     URL = 'https://api.vk.com/method/'
 
-    def __init__(self, api_token=None, api_version='5.130'):
-        if api_token is None:
-            self.api_token = os.environ['VK_API_KEY']
-        else:
-            self.api_token = api_token
+    def __init__(self, api_version='5.130'):
+        self.api_token = os.environ['VK_API_KEY']
         self.api_version = api_version
         self.base_params = {
             'access_token': self.api_token,
@@ -38,7 +35,8 @@ class VkApiClient:
         for item in photo_items:
             photo_list.append({
                 'photo': item['sizes'][-1]['url'],
-                'likes_count': item['likes']['count']
+                'likes_count': item['likes']['count'],
+                'size': item['sizes'][-1]['type']
             })
         return photo_list
 
