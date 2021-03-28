@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 import requests
 
@@ -16,11 +15,13 @@ class YandexDiskApiClient:
             'Authorization': 'OAuth ' + self.api_token
         }
 
-    def create_folder(self):
-        current_date = datetime.now().strftime('%d-%m-%Y')
+    def create_folder(self, user_id):
+        """
+        Метод создаёт папку на Яндекс.Диск
+        """
         create_folder_url = self.URL + 'resources'
         params = {
-            'path': f'disk:/archive_photos_from_vk_{current_date}'
+            'path': f'disk:/archive_photos_{user_id}'
         }
         response = requests.put(create_folder_url, headers=self.headers, params=params)
         if response.status_code == 201:
@@ -28,13 +29,16 @@ class YandexDiskApiClient:
         else:
             return response.text
 
-    def upload_photos(self, photo_list, path):
+    def upload_photos(self, photo_list, path, photos_count=5):
+        """
+        Метод загружает фотографии на Яедекс.Диск по пути "path"
+        """
         upload_photo_url = self.URL + 'resources/upload'
-        for photo in photo_list:
-            file_name = f'{photo["likes_count"]}.jpg'
+        for photo in photo_list[0:photos_count]:
+            file_name = photo["file_name"]
             params = {
                 'path': f'{path}/{file_name}',
-                'url': photo['photo']
+                'url': photo['url']
             }
             response = requests.post(upload_photo_url, headers=self.headers, params=params)
             if response.status_code == 202:
@@ -42,8 +46,3 @@ class YandexDiskApiClient:
             else:
                 return response.text
         return f'Загружено файлов: {len(photo_list)}'
-
-
-if __name__ == '__main__':
-    client = YandexDiskApiClient()
-    print(client.create_folder())

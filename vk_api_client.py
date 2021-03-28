@@ -1,7 +1,24 @@
 import os
-from pprint import pprint as pp
+from datetime import datetime
 
 import requests
+
+
+def generate_photo_list(photo_list):
+    """
+    Функция добавляет к повторяющемуся имени фотографии, теущую дату
+    """
+    finish_photo_list = []
+    for photo in photo_list:
+        if len(finish_photo_list) > 0:
+            if photo['file_name'] in [d['file_name'] for d in finish_photo_list]:
+                photo['file_name'] = f'{photo["file_name"]}_{datetime.now().strftime("%d-%m-%Y")}.jpg'
+                finish_photo_list.append(photo)
+            else:
+                finish_photo_list.append(photo)
+        else:
+            finish_photo_list.append(photo)
+    return finish_photo_list
 
 
 class VkApiClient:
@@ -16,15 +33,24 @@ class VkApiClient:
         }
 
     def get_owner_id(self):
+        """
+        метод возвращает идентификатор текущего пользователя
+        :return:
+        """
         owner_id_url = self.URL + 'users.get'
         owner_id = requests.get(owner_id_url, params=self.base_params).json()['response'][0]['id']
         return owner_id
 
     def get_profile_photos(self, user_id):
+        """
+        Метод получает все фотографии профиля (ссылка на фото, размер, колличество лайков)
+        :param user_id:
+        :return:
+        """
         photo_list = []
         profile_photos_url = self.URL + 'photos.get'
         request_params = {
-            'owner_id': user_id,
+            'owner_id': user_id if user_id is not None else self.get_owner_id(),
             'album_id': 'profile',
             'extended': 1,
             'photo_sizes': 1,
@@ -34,14 +60,8 @@ class VkApiClient:
             profile_photos_url, params={**self.base_params, **request_params}).json()['response']['items']
         for item in photo_items:
             photo_list.append({
-                'photo': item['sizes'][-1]['url'],
-                'likes_count': item['likes']['count'],
+                'url': item['sizes'][-1]['url'],
+                'file_name': f'{item["likes"]["count"]}.jpg',
                 'size': item['sizes'][-1]['type']
             })
-        return photo_list
-
-
-if __name__ == '__main__':
-    client = VkApiClient()
-    user_id = client.get_owner_id()
-    pp(client.get_profile_photos(user_id))
+        return generate_photo_list(photo_list)
